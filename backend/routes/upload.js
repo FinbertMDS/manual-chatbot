@@ -1,31 +1,41 @@
 const express = require("express");
 const multer = require("multer");
-const { getEmbedding } = require("../services/embedding");
-const { addDocument } = require("../services/vectordb");
-const { chunkText } = require("../utils/parser");
 const fs = require("fs");
-const { sleep } = require("../utils/util");
+const path = require("path");
+const { chunkText } = require("../utils/parser");
+const { getEmbeddingsBatch } = require("../services/embedding");
+const { addDocument } = require("../services/vectordb");
 
 const router = express.Router();
 const upload = multer({ dest: "uploads/" });
 
 router.post("/", upload.single("file"), async (req, res) => {
   try {
-    const text = fs.readFileSync(req.file.path, "utf-8"); // giả định là file txt
-    const chunks = chunkText(text);
+    const filePath = path.join(__dirname, "..", req.file.path);
+    const fileContent = fs.readFileSync(filePath, "utf-8");
 
-    for (let i = 0; i < chunks.length; i++) {
-      const chunk = chunks[i];
-      const embedding = await getEmbedding(chunk);
+    const chunks = chunkText(fileContent);
+    const limitedChunks = chunks.slice(0, 20); // 🚫 hạn chế upload nếu cần
 
-      await addDocument(`${req.file.filename}-${i}`, chunk, embedding);
-      await sleep(1000); // chờ 200ms giữa mỗi lần gọi OpenAI
+    console.log(
+      `📄 File upload: ${req.file.originalname} (${limitedChunks.length} chunks)`
+    );
+
+    const embeddings = await getEmbeddingsBatch(limitedChunks);
+
+    // Lưu từng embedding + chunk vào vectordb
+    for (let i = 0; i < embeddings.length; i++) {
+      await addDocument(
+        `${req.file.filename}-${i}`,
+        limitedChunks[i],
+        embeddings[i]
+      );
     }
 
-    res.json({ message: "Manual uploaded and embedded!" });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Upload failed" });
+    res.json({ message: "Manual uploaded and processed successfully!" });
+  } catch (error) {
+    console.error("❌ Upload error:", error.message);
+    res.status(500).json({ error: "Failed to process manual" });
   }
 });
 

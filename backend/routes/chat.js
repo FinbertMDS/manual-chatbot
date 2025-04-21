@@ -1,29 +1,27 @@
 const express = require("express");
-const { getEmbedding } = require("../services/embedding");
-const { searchSimilar } = require("../services/vectordb");
-const { OpenAI } = require("openai");
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
 const router = express.Router();
+const { getEmbeddingsBatch } = require("../services/embedding");
+const { searchSimilar } = require("../services/vectordb");
+// const { createAnswerFromContext } = require("../services/answer"); // optional nếu muốn tóm tắt trả lời
 
+// POST /api/chat
 router.post("/", async (req, res) => {
   try {
-    const { question } = req.body;
-    const embedding = await getEmbedding(question);
-    const results = await searchSimilar(embedding, 3);
+    const { message } = req.body;
 
-    const context = results.documents[0].join("\n---\n");
-    const prompt = `Dựa vào tài liệu sau, hãy trả lời câu hỏi:\n\n${context}\n\nCâu hỏi: ${question}`;
+    // 👉 1. Tạo embedding từ message (Cohere)
+    const [queryEmbedding] = await getEmbeddingsBatch([message]);
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: [{ role: "user", content: prompt }],
+    // 👉 2. Tìm các đoạn văn gần nhất từ vectordb
+    const topMatches = await searchSimilar(queryEmbedding, 3); // lấy top 3 context gần nhất
+
+    // 👉 3. Trả lại kết quả (hoặc bạn có thể ghép lại thành 1 câu trả lời)
+    res.json({
+      results: topMatches,
+      context: topMatches.map((doc) => doc.text).join("\n---\n"),
     });
-
-    const answer = completion.choices[0].message.content;
-    res.json({ answer });
-  } catch (err) {
-    console.error(err);
+  } catch (error) {
+    console.error("❌ Chat error:", error.message);
     res.status(500).json({ error: "Chat failed" });
   }
 });

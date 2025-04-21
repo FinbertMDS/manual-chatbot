@@ -1,7 +1,6 @@
 // backend/index.js
 
 require("dotenv").config();
-console.log("🔑 OPENAI_API_KEY =", process.env.OPENAI_API_KEY);
 
 const express = require("express");
 const cors = require("cors");
