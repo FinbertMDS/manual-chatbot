@@ -1,0 +1,32 @@
+Hướng dẫn sử dụng ứng dụng SmartHome
+
+1. Kết nối thiết bị qua Bluetooth:
+- Mở ứng dụng SmartHome trên điện thoại.
+- Bật Bluetooth.
+- Nhấn nút "Thêm thiết bị", ứng dụng sẽ tự động quét các thiết bị gần đó.
+- Chọn thiết bị của bạn để kết nối.
+
+2. Đăng nhập:
+- Mở ứng dụng và chọn "Đăng nhập".
+- Nhập email và mật khẩu.
+- Nếu quên mật khẩu, chọn "Quên mật khẩu" để đặt lại.
+
+3. Giao diện ứng dụng:
+- Trang chủ: hiển thị danh sách thiết bị.
+- Cài đặt: thay đổi thông tin tài khoản và thông báo.
+- Nhật ký: xem lịch sử hoạt động thiết bị.
+
+4. Chức năng cơ bản:
+- Bật/tắt thiết bị.
+- Đặt lịch bật/tắt tự động.
+- Nhận thông báo khi thiết bị có vấn đề.
+
+5. Câu hỏi thường gặp:
+- Không kết nối được thiết bị?
+  → Hãy đảm bảo thiết bị đã bật và ở gần điện thoại.
+- Ứng dụng không gửi thông báo?
+  → Kiểm tra cài đặt thông báo trong điện thoại.
+- Quên mật khẩu?
+  → Dùng chức năng "Quên mật khẩu" để đặt lại.
+
+© SmartHome Inc.
