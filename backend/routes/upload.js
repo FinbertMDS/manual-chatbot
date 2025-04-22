@@ -2,7 +2,7 @@ const express = require("express");
 const multer = require("multer");
 const fs = require("fs");
 const path = require("path");
-const { chunkText } = require("../utils/parser");
+const { chunkText, parseFileToText } = require("../utils/parser");
 const { getEmbeddingsBatch } = require("../services/embedding");
 const { addDocument } = require("../services/vectordb");
 
@@ -11,8 +11,7 @@ const upload = multer({ dest: "uploads/" });
 
 router.post("/", upload.single("file"), async (req, res) => {
   try {
-    const filePath = path.join(__dirname, "..", req.file.path);
-    const fileContent = fs.readFileSync(filePath, "utf-8");
+    const fileContent = await parseFileToText(req.file.path, req.file.originalname);
 
     const chunks = chunkText(fileContent);
     const limitedChunks = chunks.slice(0, 20); // 🚫 hạn chế upload nếu cần
