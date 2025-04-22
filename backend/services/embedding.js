@@ -1,38 +1,39 @@
-require("dotenv").config();
-const { CohereClient } = require("cohere-ai");
-const { sleep } = require("../utils/util");
 
-const cohere = new CohereClient({
-  token: process.env.COHERE_API_KEY,
-});
+const { detectLanguage } = require('../utils/lang');
+const { addToVectorDB } = require('./vectordb');
+const { CohereClient } = require('cohere-ai');
+const cohere = new CohereClient({ token: process.env.COHERE_API_KEY });
 
-// ✅ Batch embedding với retry
-async function getEmbeddingsBatch(chunks) {
-  let attempts = 0;
-  const maxRetries = 5;
+async function getEmbeddings(texts) {
+  const res = await cohere.embed({
+    model: 'embed-multilingual-v3.0',
+    texts,
+    inputType: 'search_document',
+  });
 
-  while (attempts < maxRetries) {
-    try {
-      const res = await cohere.embed({
-        model: "embed-multilingual-v3.0",
-        texts: chunks,
-        inputType: "search_document", // hoặc 'classification' tùy mục tiêu
-      });
-
-      return res.embeddings;
-    } catch (error) {
-      if (error.statusCode === 429 || error.code === "rate_limit_exceeded") {
-        attempts++;
-        console.warn(`⚠️ Cohere Rate limit — retry ${attempts}/${maxRetries}`);
-        await sleep(1000 * attempts);
-      } else {
-        console.error("❌ Cohere embedding error:", error.message);
-        throw error;
-      }
-    }
-  }
-
-  throw new Error("Too many retries for Cohere embeddings.");
+  return res.embeddings;
 }
 
-module.exports = { getEmbeddingsBatch };
+async function embedAndStoreChunks({ chunks, metadata }) {
+  const lang = detectLanguage(chunks.slice(0, 3).join(' '));
+  const embeddings = await getEmbeddings(chunks);
+
+  const entries = chunks.map((text, i) => ({
+    id: `chunk-${Date.now()}-${i}`,
+    embedding: embeddings[i],
+    metadata: {
+      ...metadata,
+      lang,
+      index: i,
+      text
+    }
+  }));
+
+  await addToVectorDB(embeddings, entries);
+  return entries.length;
+}
+
+module.exports = {
+  getEmbeddings,
+  embedAndStoreChunks,
+};

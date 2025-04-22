@@ -25,34 +25,57 @@ function chunkText(text, maxLength = 100) {
   return chunks;
 }
 
-async function parseFileToText(filePath, fileName) {
+async function parseFileToText(req) {
+  if (!req.file) throw new Error('No file uploaded');
+
+  const fileName = req.file.originalname;
+  const filePath = req.file.path;
   const ext = path.extname(fileName).toLowerCase();
+  const name = path.basename(fileName, ext);
+  const tag = ext.replace('.', '');
+
+  let rawText = '';
+
   log('🚀 File upload:', filePath, fileName);
 
-  if (ext === '.txt') {
-    return fs.readFileSync(filePath, 'utf-8');
+  switch (ext) {
+    case '.txt':
+    case '.md':
+      rawText =  fs.readFileSync(filePath, 'utf-8');
+      break;
+    case '.pdf':
+      const pdf = require('pdf-parse');
+      const dataBuffer = fs.readFileSync(filePath);
+      rawText = await pdf(dataBuffer).then(data => data.text);
+      break;
+    case '.doc':
+    case '.docx':
+      const result = await mammoth.extractRawText({ path: filePath });
+      rawText = result.value;
+      break;
+    case '.xlsx':
+      const workbook = xlsx.readFile(filePath);
+      let text = '';
+      workbook.SheetNames.forEach((sheetName) => {
+        const sheet = workbook.Sheets[sheetName];
+        text += xlsx.utils.sheet_to_csv(sheet);
+      });
+      rawText =  text;
+    case '.pptx': 
+      rawText = await extractTextFromPPTX(filePath);
+      break;
+    default:
+      throw new Error(`Unsupported file type: ${ext}`);
   }
 
-  if (ext === '.docx') {
-    const result = await mammoth.extractRawText({ path: filePath });
-    return result.value;
-  }
+  const textChunks = chunkText(rawText);
+  const fileInfo = {
+    name,
+    tag,
+    source: req.file.originalname,
+  };
 
-  if (ext === '.xlsx') {
-    const workbook = xlsx.readFile(filePath);
-    let text = '';
-    workbook.SheetNames.forEach((sheetName) => {
-      const sheet = workbook.Sheets[sheetName];
-      text += xlsx.utils.sheet_to_csv(sheet);
-    });
-    return text;
-  }
-
-  if (ext === '.pptx') {
-    return extractTextFromPPTX(filePath);
-  }
-
-  throw new Error('Unsupported file format: ' + ext);
+  return { textChunks, fileInfo };
 }
 
 async function extractTextFromPPTX(filePath) {
