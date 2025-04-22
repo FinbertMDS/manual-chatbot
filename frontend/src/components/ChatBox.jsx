@@ -1,55 +1,62 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 const ChatBox = () => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
+  const chatContainerRef = useRef(null);
 
-  const handleSend = async () => {
+  const sendMessage = async () => {
     if (!input.trim()) return;
 
-    const userMessage = { sender: 'user', text: input };
-    setMessages([...messages, userMessage]);
+    const newMessages = [...messages, { sender: 'user', text: input }];
+    setMessages(newMessages);
     setInput('');
 
-    try {
-      const res = await fetch('http://localhost:3001/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: input }),
-      });
-      const data = await res.json();
-      const botMessage = { sender: 'bot', text: data.answer };
-      setMessages((prev) => [...prev, botMessage]);
-    } catch (err) {
-      setMessages((prev) => [
-        ...prev,
-        { sender: 'bot', text: '❌ Lỗi khi gửi câu hỏi.' },
-      ]);
-    }
+    const res = await fetch('http://localhost:3001/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question: input }),
+    });
+
+    const data = await res.json();
+    const answer = data?.answer || data?.results?.[0]?.text || 'Bot không có câu trả lời.';
+    setMessages((prev) => [...prev, { sender: 'bot', text: answer }]);
   };
 
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') sendMessage();
+  };
+
+  useEffect(() => {
+    // Tự động scroll xuống cuối khi có tin nhắn mới
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+  }, [messages]);
+
   return (
-    <>
-      <div className="chat-container">
-        {messages.map((msg, index) => (
-          <div
-            key={index}
-            className={`message ${msg.sender}`}
-            dangerouslySetInnerHTML={{ __html: msg.text }}
-          />
+    <div className="chat-wrapper">
+      <header className="chat-header">Manual Chatbot</header>
+
+      <div className="chat-body" ref={chatContainerRef}>
+        {messages.map((msg, idx) => (
+          <div key={idx} className={`chat-message ${msg.sender}`}>
+            <div dangerouslySetInnerHTML={{ __html: msg.text }} />
+          </div>
         ))}
       </div>
-      <div className="input-container">
+
+      <div className="chat-input">
         <input
           type="text"
           value={input}
-          placeholder="Nhập câu hỏi..."
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+          onKeyDown={handleKeyDown}
+          placeholder="Nhập câu hỏi..."
         />
-        <button onClick={handleSend}>Gửi</button>
+        <button onClick={sendMessage}>Gửi</button>
       </div>
-    </>
+    </div>
   );
 };
 
