@@ -1,0 +1,64 @@
+name: Manual Chatbot CI/CD
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  AWS_REGION: ap-northeast-1
+
+jobs:
+  deploy:
+    name: Deploy Full Stack
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Get EC2 IP
+        id: ec2
+        run: |
+          INSTANCE_ID=$(aws ec2 describe-instances \
+            --filters "Name=tag:Name,Values=manual-chatbot-ec2" \
+            --query "Reservations[*].Instances[*].InstanceId" --output text)
+          IP=$(aws ec2 describe-instances \
+            --instance-ids $INSTANCE_ID \
+            --query "Reservations[0].Instances[0].PublicIpAddress" --output text)
+          echo "SERVER_IP=$IP" >> $GITHUB_ENV
+
+      - name: Build React frontend
+        working-directory: frontend
+        run: |
+          echo "VITE_SERVER_URL=http://${SERVER_IP}:3001" > .env.production
+          npm ci
+          npm run build
+
+      - name: Deploy frontend to S3
+        run: |
+          aws s3 sync frontend/dist s3://${{ secrets.S3_BUCKET }} --delete
+
+      - name: Invalidate CloudFront Cache
+        run: |
+          aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_ID }} --paths "/*"
+
+      - name: Deploy backend (via SSH)
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ env.SERVER_IP }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          script: |
+            cd /home/ec2-user/manual-chatbot/backend
+            git pull origin master
+            npm install
+            pm2 reload ecosystem.config.js --env production || pm2 start ecosystem.config.js --env production
+            pm2 save

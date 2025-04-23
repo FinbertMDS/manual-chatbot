@@ -1,5 +1,7 @@
 const { ChromaClient } = require("chromadb");
-const client = new ChromaClient();
+const client = new ChromaClient({
+  path: `http://${process.env.CHROMA_HOST}:8000`,
+});
 
 const COLLECTION_NAME = "manual_chunks";
 
