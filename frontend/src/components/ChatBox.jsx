@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+const serverURL = import.meta.env.VITE_SERVER_URL;
 
 const ChatBox = () => {
   const [messages, setMessages] = useState([]);
@@ -12,7 +13,7 @@ const ChatBox = () => {
     setMessages(newMessages);
     setInput('');
 
-    const res = await fetch('http://localhost:3001/api/chat', {
+    const res = await fetch(`${serverURL}/api/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ question: input }),
