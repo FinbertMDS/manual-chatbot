@@ -1,5 +1,5 @@
 # Sử dụng image Node.js Alpine chính thức
-FROM node:20-alpine
+FROM node:22-alpine
 
 # Cài đặt bash vì Alpine không có sẵn bash
 RUN apk add --no-cache bash
@@ -12,7 +12,7 @@ WORKDIR /app
 
 # Sao chép và cài đặt dependencies
 COPY package*.json ./
-RUN npm install --production
+RUN npm install
 
 # Sao chép toàn bộ mã nguồn
 COPY . .

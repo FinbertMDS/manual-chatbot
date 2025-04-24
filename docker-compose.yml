@@ -25,5 +25,14 @@ services:
       - ./backend:/app
     restart: unless-stopped
 
+  # frontend:
+  #   image: nginx:alpine
+  #   ports:
+  #     - "80:80"
+  #   volumes:
+  #     - ./frontend/dist:/usr/share/nginx/html:ro
+  #   depends_on:
+  #     - backend
+
 volumes:
   chroma-data:

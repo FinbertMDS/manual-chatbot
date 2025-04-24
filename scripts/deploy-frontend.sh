@@ -1,14 +1,14 @@
 #!/bin/bash
 
 cd "$(dirname "$0")/../terraform"
-SERVER_IP=$(terraform output -raw ec2_public_ip)
+API_URL=$(terraform output -raw apigateway_endpoint)
 cd "./.."
 # 💡 Step 2: Generate .env for React frontend
 cat <<EOF > frontend/.env
-VITE_SERVER_URL=http://$SERVER_IP:3001
+VITE_SERVER_URL=$API_URL
 EOF
 
-echo ".env created with SERVER_IP: $SERVER_IP"
+echo ".env created with API_URL: $API_URL"
 
 # Build project
 cd "frontend"

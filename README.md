@@ -1,0 +1,14 @@
+- Frontend
+  - ReactJS
+  - Tạo UI phép người dùng nhập câu hỏi và nhận câu trả lời từ mô hình dưới dạng chatbot
+- Backend
+  - Node.js (Express)
+  - API để upload file manual và nhận câu hỏi từ người dùng
+  - File manual được chuyển thành dạng text và lưu trữ trong ChromaDB
+  - Kết nối với Cohere AI để xử lý câu hỏi và trả lời
+- ChromaDB
+  - Lưu trữ các vector đã được trích xuất từ file manual
+  - Tìm kiếm và truy vấn các vector để trả lời câu hỏi của người dùng
+- Cohere AI
+  - Sử dụng Cohere AI để xử lý các câu hỏi và trả lời từ người dùng
+  - Sử dụng Cohere AI để trích xuất thông tin từ file manual (txt, pptx, xlsx, docx)
