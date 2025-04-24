@@ -30,9 +30,10 @@ sudo chmod +x /usr/local/bin/docker-compose
 cd /home/ec2-user
 git clone https://github.com/FinbertMDS/manual-chatbot.git
 cd manual-chatbot
+cp backend/.env.example backend/.env
 
 # Run ChromaDB with Docker Compose
-sudo docker-compose up -d
+sudo docker-compose up -d --build
 
 # Done
 echo "✅ Setup complete"
