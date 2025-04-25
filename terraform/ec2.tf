@@ -28,6 +28,7 @@ resource "aws_security_group" "chatbot_sg" {
     to_port     = 3001
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
+    security_groups = [aws_security_group.alb_sg.id] 
   }
 
   egress {
@@ -43,37 +44,6 @@ resource "aws_security_group" "chatbot_sg" {
 data "aws_vpc" "default" {
   default = true
 }
-
-resource "aws_apigatewayv2_api" "http_api" {
-  name          = "chatbot-api"
-  protocol_type = "HTTP"
-
-  cors_configuration {
-    allow_origins = ["*"]
-    allow_methods = ["*"]
-    allow_headers = ["*"]
-  }
-}
-
-resource "aws_apigatewayv2_integration" "http_integration" {
-  api_id             = aws_apigatewayv2_api.http_api.id
-  integration_type   = "HTTP_PROXY"
-  integration_method = "ANY"
-  integration_uri    = "http://${aws_instance.chatbot_backend.public_ip}:3001"
-}
-
-resource "aws_apigatewayv2_route" "proxy_route" {
-  api_id    = aws_apigatewayv2_api.http_api.id
-  route_key = "ANY /{proxy+}"
-  target    = "integrations/${aws_apigatewayv2_integration.http_integration.id}"
-}
-
-resource "aws_apigatewayv2_stage" "default" {
-  api_id      = aws_apigatewayv2_api.http_api.id
-  name        = "$default"
-  auto_deploy = true
-}
-
 
 terraform {
   backend "local" {

@@ -28,6 +28,8 @@ resource "aws_s3_bucket_policy" "chatbot_frontend_policy" {
       }
     ]
   })
+
+  depends_on = [aws_s3_bucket_public_access_block.frontend_access_block]
 }
 
 resource "aws_cloudfront_distribution" "chatbot_frontend_cdn" {

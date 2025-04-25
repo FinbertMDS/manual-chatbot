@@ -3,11 +3,6 @@ output "ec2_public_ip" {
   value       = aws_instance.chatbot_backend.public_ip
 }
 
-output "apigateway_endpoint" {
-  description = "API Gateway endpoint for the chatbot backend"
-  value       = aws_apigatewayv2_api.http_api.api_endpoint
-}
-
 output "ec2_public_dns" {
   description = "Public DNS of the EC2 instance"
   value       = aws_instance.chatbot_backend.public_dns
@@ -30,5 +25,10 @@ output "cloudfront_domain_name" {
 
 output "cloudfront_url" {
   description = "Full CloudFront URL for the frontend"
-  value       = "https://${aws_cloudfront_distribution.chatbot_frontend_cdn.domain_name}"
+  value       = "http://${aws_cloudfront_distribution.chatbot_frontend_cdn.domain_name}"
+}
+
+output "alb_http_url" {
+  value = "http://${aws_lb.chatbot_alb.dns_name}"
+  description = "ALB HTTPS URL"
 }
